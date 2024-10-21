@@ -30,6 +30,12 @@ using namespace duckdb;
 	}                                                                                                                  \
 	string VerifyResult(QueryResult *result) override {                                                                \
 		return "";                                                                                                     \
+	}                                                                                                                  \
+	string GetLogOutput(BenchmarkState *state_p) override {                                                            \
+		auto state = (DuckDBBenchmarkState *)state_p;                                                                  \
+		auto &profiler = QueryProfiler::Get(*state->conn.context);                                                     \
+		map<string, string> info = {{"benchmark_name", DisplayName()}};                                                \
+		return profiler.ToExtendedJSON(info);                                                                          \
 	}
 
 #define NORMAL_CONFIG                                                                                                  \

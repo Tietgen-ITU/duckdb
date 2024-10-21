@@ -4,18 +4,13 @@
 using namespace duckdb;
 
 #define SSB_QUERY(QUERY, SF, THREADS)                                                                                  \
-	string db_path = "duckdb_benchmark_db.db";                                                                         \
+	string db_path = "ssb_sf" + std::to_string(SF) + ".duckdb";                                                        \
 	void Load(DuckDBBenchmarkState *state) override {                                                                  \
-		DeleteDatabase(db_path);                                                                                       \
-		{                                                                                                              \
+		auto fs = FileSystem::CreateLocal();                                                                           \
+		if (!fs->FileExists(db_path)) {                                                                                \
 			DuckDB db(db_path);                                                                                        \
 			Connection con(db);                                                                                        \
 			con.Query("CALL ssbgen(sf=" + std::to_string(SF) + ")");                                                   \
-		}                                                                                                              \
-		{                                                                                                              \
-			auto config = GetConfig();                                                                                 \
-			config->options.checkpoint_wal_size = 0;                                                                   \
-			DuckDB db(db_path, config.get());                                                                          \
 		}                                                                                                              \
 	}                                                                                                                  \
 	void RunBenchmark(DuckDBBenchmarkState *state) override {                                                          \
@@ -25,8 +20,7 @@ using namespace duckdb;
 		state->result = con.Query(QUERY);                                                                              \
 	}                                                                                                                  \
 	string BenchmarkInfo() override {                                                                                  \
-		return string("Start a SSB SF") + std::to_string(SF) + string(" database and run ") + QUERY +                  \
-		       string(" in the database");                                                                             \
+		return "Start a SSB SF" + std::to_string(SF) + " database and run " + QUERY + " in the database";              \
 	}                                                                                                                  \
 	string VerifyResult(QueryResult *result) override {                                                                \
 		return "";                                                                                                     \

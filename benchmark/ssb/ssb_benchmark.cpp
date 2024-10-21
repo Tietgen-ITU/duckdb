@@ -4,31 +4,37 @@
 using namespace duckdb;
 
 #define SSB_QUERY(QUERY, SF, THREADS)                                                                                  \
-	string db_path = "ssb_sf" + std::to_string(SF) + ".duckdb";                                                        \
+	int scale_factor = SF;                                                                                             \
+	int thread_count = THREADS;                                                                                        \
+	string db_path = "ssb_sf" + std::to_string(scale_factor) + ".duckdb";                                              \
 	void Load(DuckDBBenchmarkState *state) override {                                                                  \
-		auto fs = FileSystem::CreateLocal();                                                                           \
-		if (!fs->FileExists(db_path)) {                                                                                \
-			DuckDB db(db_path);                                                                                        \
-			Connection con(db);                                                                                        \
-			con.Query("CALL ssbgen(sf=" + std::to_string(SF) + ")");                                                   \
+		if (state->conn.TableInfo("lineorder") == nullptr) {                                                           \
+			printf("Loading SSB data for SF %d\n", scale_factor);                                                      \
+			state->conn.Query("CALL ssbgen(sf=" + std::to_string(scale_factor) + ")");                                 \
 		}                                                                                                              \
+		state->conn.Query("PRAGMA threads=" + std::to_string(thread_count));                                           \
 	}                                                                                                                  \
-	void RunBenchmark(DuckDBBenchmarkState *state) override {                                                          \
-		auto config = GetConfig();                                                                                     \
-		DuckDB db(db_path, config.get());                                                                              \
-		Connection con(db);                                                                                            \
-		state->result = con.Query(QUERY);                                                                              \
+	duckdb::unique_ptr<DuckDBBenchmarkState> CreateBenchmarkState() override {                                         \
+		return make_uniq<DuckDBBenchmarkState>(db_path);                                                               \
+	}                                                                                                                  \
+	string GetQuery() override {                                                                                       \
+		return QUERY;                                                                                                  \
 	}                                                                                                                  \
 	string BenchmarkInfo() override {                                                                                  \
 		return "Start a SSB SF" + std::to_string(SF) + " database and run " + QUERY + " in the database";              \
 	}                                                                                                                  \
 	string VerifyResult(QueryResult *result) override {                                                                \
-		return "";                                                                                                     \
+		if (result->HasError()) {                                                                                      \
+			return result->GetError();                                                                                 \
+		}                                                                                                              \
+		return string();                                                                                               \
 	}                                                                                                                  \
 	string GetLogOutput(BenchmarkState *state_p) override {                                                            \
 		auto state = (DuckDBBenchmarkState *)state_p;                                                                  \
 		auto &profiler = QueryProfiler::Get(*state->conn.context);                                                     \
-		map<string, string> info = {{"benchmark_name", DisplayName()}};                                                \
+		map<string, string> info = {{"benchmark_name", DisplayName()},                                                 \
+		                            {"scale_factor", std::to_string(SF)},                                              \
+		                            {"thread_count", std::to_string(THREADS)}};                                        \
 		return profiler.ToExtendedJSON(info);                                                                          \
 	}
 
@@ -152,7 +158,7 @@ using namespace duckdb;
                                                                                                                        \
 	DUCKDB_BENCHMARK(SSBQ4v3S##SF##T##THREAD, "[ssb]")                                                                 \
 	SSB_QUERY(                                                                                                         \
-	    "SELECT d_year, s_city, p_brand2, SUM(lo_revenue - lo_supplycost) AS profit FROM date, customer, supplier, "   \
+	    "SELECT d_year, s_city, p_brand1, SUM(lo_revenue - lo_supplycost) AS profit FROM date, customer, supplier, "   \
 	    "part, "                                                                                                       \
 	    "lineorder WHERE lo_custkey = c_custkey AND lo_suppkey = s_suppkey AND lo_partkey = p_partkey AND "            \
 	    "lo_orderdate = "                                                                                              \

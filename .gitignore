@@ -360,5 +360,6 @@ tools/pythonpkg/duckdb_build/
 
 # DuckDB becnhmark result files
 *.out
+*.log
 *.csv
 *.res

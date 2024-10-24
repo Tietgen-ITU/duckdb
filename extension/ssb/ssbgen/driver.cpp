@@ -196,7 +196,7 @@ tdef tdefs[] = {
       the base here is 150,000 instead if 1500,000*/
     {"lineorder.tbl",
      "lineorder table",
-     150000,
+     150000 * ORDERS_PER_CUST,
      hd_line,
      {(func_ptr)pr_line, (func_ptr)ld_line},
      sd_line,
@@ -571,7 +571,6 @@ int gen_main(double scale_f, ssb_appender *appender) {
 	updates = 0;
 	refresh = UPD_PCT;
 	step = -1;
-	tdefs[LINE].base *= ORDERS_PER_CUST; /* have to do this after init */
 	fnames = 0;
 	db_name = NULL;
 	gen_sql = 0;

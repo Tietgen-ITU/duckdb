@@ -168,11 +168,14 @@ using namespace duckdb;
 	NORMAL_CONFIG                                                                                                      \
 	FINISH_BENCHMARK(SSBQ4v3S##SF##T##THREAD)
 
-/* Benchmarks for task 1 - Varying on the thread count but keep the scale factor(sf) steady */
+SSB_BENCHMARK_GROUP(1, 1)
+SSB_BENCHMARK_GROUP(1, 4)
+SSB_BENCHMARK_GROUP(1, 8)
+
 SSB_BENCHMARK_GROUP(10, 1)
+SSB_BENCHMARK_GROUP(10, 4)
 SSB_BENCHMARK_GROUP(10, 8)
 
-/* Benchmarks for task 2 - Varying on the scale factor(sf) but keep the thread count steady */
-SSB_BENCHMARK_GROUP(1, 4)
-SSB_BENCHMARK_GROUP(10, 4)
+SSB_BENCHMARK_GROUP(100, 1)
 SSB_BENCHMARK_GROUP(100, 4)
+SSB_BENCHMARK_GROUP(100, 8)
